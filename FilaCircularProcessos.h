@@ -1,6 +1,7 @@
 
 union processo{
 	int pid,ppid,uid,gid;
+	int CPU_Burst,tempo_exec;
 };typedef union processo Processo;
 
 struct tpfilac{
@@ -27,12 +28,14 @@ void Init(Desc *desc){
 	desc.qtde=0;
 }
 
-Processo criarProcesso(int pid,int ppid, int uid, int gid){
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec){
 	Processo processo;
 	processo.pid=pid;
 	processo.ppid=ppid;
 	processo.uid=uid;
-	processo.gid=gid;	
+	processo.gid=gid;
+	processo.CPU_Burst=CPU_Burst;
+	processo.tempo_exec=tempo_exec;	
 }
 
 void Enqueue(Desc *desc, Processo proc){
