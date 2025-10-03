@@ -1,11 +1,11 @@
 
-union processo{
+struct processo{
 	int pid,ppid,uid,gid;
 	int CPU_Burst,tempo_exec;
-};typedef union processo Processo;
+};typedef struct processo Processo;
 
 struct tpfilac{
-	union processo Processo;
+	struct processo Processo;
 	struct tpfilac *prox;
 };typedef struct tpfilac TpFilaC;
 
@@ -15,17 +15,17 @@ struct desc{
 };typedef struct desc Desc; 
 
 
-void Init(Desc *desc);
-Processo criarProcesso(int pid,int ppid, int uid, int gid);
-void Enqueue(Desc *desc, Processo proc);
-Processo Dequeue(Desc *desc);
+void init(Desc *desc);
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec);
+void enqueue(Desc *desc, Processo proc);
+Processo dequeue(Desc *desc);
 char QisEmpty(int qtde);
 void Exibir(Desc desc);
 
-void Init(Desc *desc){
-	desc.inicio=NULL;
-	desc.fim=NULL;
-	desc.qtde=0;
+void init(Desc *desc){
+	desc->inicio=NULL;
+	desc->fim=NULL;
+	desc->qtde=0;
 }
 
 Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec){
@@ -35,31 +35,31 @@ Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int te
 	processo.uid=uid;
 	processo.gid=gid;
 	processo.CPU_Burst=CPU_Burst;
-	processo.tempo_exec=tempo_exec;	
+	processo.tempo_exec=tempo_exec;
+	return processo;	
 }
 
-void Enqueue(Desc *desc, Processo proc){
-	TpFilaC *aux = (*desc)->inicio;
-	TpFilaC *Nova = (TpFilaC*)malloc(sizeof(TpFilaC));
-	Nova->Processo=proc;
-	Nova->prox=NULL;
-	if(aux==NULL)
-		(*desc)->inicio=(*desc)->fim=Nova;
-	else{
-		while(aux->prox!=NULL)
-			aux=aux->prox;
-		aux->prox=Nova;
-		(*desc)->fim=Nova;
-		(*desc)->qtde++;
-	}		
+void enqueue(Desc *desc, Processo proc){
+    TpFilaC *Nova = (TpFilaC*)malloc(sizeof(TpFilaC));
+    Nova->Processo = proc;
+    Nova->prox = NULL;
+
+    if(desc->inicio == NULL){      
+        desc->inicio = desc->fim = Nova;
+    } else {                       
+        desc->fim->prox = Nova;
+        desc->fim = Nova;
+    }
+
+    desc->qtde++;   
 }
 
-Processo Dequeue(Desc *desc){
-	Processo proc=(*desc)->inicio->Processo;
-	TpFilaC *aux=(*desc)->inicio;
-	(*desc)->inicio=aux->prox;
+Processo dequeue(Desc *desc){
+	Processo proc=desc->inicio->Processo;
+	TpFilaC *aux=desc->inicio;
+	desc->inicio=aux->prox;
 	free(aux);
-	(*desc)->qtde--;
+	desc->qtde--;
 	return proc;
 }
 
@@ -69,14 +69,19 @@ char QisEmpty(int qtde){
 
 void Exibir(Desc desc){
 	Processo proc;
+	int i=1;
 	while(!QisEmpty(desc.qtde)){
-		proc = Dequeue(desc);
+		proc = dequeue(&desc);
+		printf("%do processo na fila\n",i);
 		printf("Pid: %d\n",proc.pid);
 		printf("Ppid: %d\n",proc.ppid);
 		printf("Gid: %d\n",proc.gid);
 		printf("Uid: %d\n",proc.uid);
+		printf("CPU: %d\n",proc.CPU_Burst);
+		printf("Tempo: %d\n",proc.tempo_exec);
+		i++;
 	}
-		
+	getch();	
 }
 
 

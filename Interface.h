@@ -52,37 +52,30 @@ void Menu1() {
     textcolor(10);
     textbackground(0);
     gotoxy(3,21);
-    printf("[ENTER] Iniciar Programa");
+    printf("[ENTER] Iniciar");
     gotoxy(3,22);
     printf("[ESC] - Sair");
 }
 
-void Menu2(){
-	system("cls");
+int Menu2(){
+	int op;
+	clrscr();
 	FormPrincipal();
-    textcolor(15);
-    textbackground(0);
-    textcolor(10);
-    textbackground(0);
-    gotoxy(3,10);
-    printf("[F1] Incluir novo processo");
-    gotoxy(3,11);
-    printf("[F2] Executar Processo");
-    gotoxy(3,12);
-    printf("na Fila de Prontos");
-    gotoxy(3,13);
-    printf("[F3] Colocar processo em");
-    gotoxy(3,14);
-    printf("espera");
-    printf("Retirar da Fila de");
-    printf("Espera");
-    printf("Criar processo Filho");
-    
-    
-    
-    
-    gotoxy(3,22);
-    printf("[ESC] - Voltar");
+	textcolor(15);
+	gotoxy(30, 7);
+	printf("Deseja:");
+    gotoxy(30,8);
+    printf("1 - Incluir novo processo");
+    gotoxy(30,10);
+    printf("2 - Executar Processo na Fila de Prontos");
+    gotoxy(30,12);
+    printf("3 - Colocar processo em espera");
+    gotoxy(30,14);
+    printf("4 - Retirar da Fila de Espera");
+    gotoxy(30,16);
+    printf("5 - Voltar");
+    scanf("%d",&op);
+    return op;
 }
 
 
@@ -96,8 +89,8 @@ void exibirParticipantes(void){
 	textcolor(2);
     textbackground(0);
     gotoxy(45,11);printf("Daniel Martins de Almeida Neves");
-    gotoxy(45,13);printf("Gabriel");
-    gotoxy(45,15);printf("Marina Rezende");
+    gotoxy(45,13);printf("Gabriel Lucas Moreira Mariano");
+    gotoxy(45,15);printf("Mariana Fernandes Rezende");
     textcolor(0);
     textbackground(0);
     Sleep(2000);
