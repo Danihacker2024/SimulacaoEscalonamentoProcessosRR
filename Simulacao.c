@@ -14,8 +14,8 @@ int gerarProcessos(Desc *desc){
 	int uid;
 	uid = 1000;
 	int CPU_Burst;
-	int i;	
-	for(i = 0; i<3;i++){
+	int i;
+	for(i = 0; i<2;i++){
 		CPU_Burst = (rand() % 30) + 1;
 		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0));
 		ppid = pid;
@@ -67,7 +67,7 @@ void Simulacao(){
 	printf("Tempo da simulacao em segundos: ");
 	scanf("%d",&tempo);
 	CPU = dequeue(&descritor);
-    while(CPU.pid=0 || tempo>0){
+    while(CPU.pid!=0 || tempo>0 || !QisEmpty(descEspera.qtde)){
 	    if(kbhit()){
 			opcao = Menu2();
 			if(opcao==1)
@@ -109,15 +109,18 @@ void Simulacao(){
 					enqueue(&descEspera,CPU);
 					if(!QisEmpty(descritor.qtde))
 						CPU = dequeue(&descritor);
+					quantum=1;
 				}
-				quantum++;
+				if(quantum!=10)
+					quantum++;
 				if(quantum==10 && !QisEmpty(descritor.qtde)){
 					gotoxy(70,9);
 					printf("Acabou o quantum");
 					enqueue(&descritor,CPU);
 					CPU = dequeue(&descritor);
 					quantum=1;
-				}	
+				}
+					
 			} else if(!QisEmpty(descritor.qtde)){
 				gotoxy(70,9);
 				printf("Processo finalizado");

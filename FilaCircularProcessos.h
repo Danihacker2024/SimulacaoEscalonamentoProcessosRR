@@ -67,22 +67,6 @@ char QisEmpty(int qtde){
 	return qtde==0;
 }
 
-void Exibir(Desc desc){
-	Processo proc;
-	int i=1;
-	while(!QisEmpty(desc.qtde)){
-		proc = dequeue(&desc);
-		printf("%do processo na fila\n",i);
-		printf("Pid: %d\n",proc.pid);
-		printf("Ppid: %d\n",proc.ppid);
-		printf("Gid: %d\n",proc.gid);
-		printf("Uid: %d\n",proc.uid);
-		printf("CPU: %d\n",proc.CPU_Burst);
-		printf("Tempo: %d\n",proc.tempo_exec);
-		i++;
-	}
-	getch();	
-}
 
 
 
