@@ -1,7 +1,3 @@
-
-
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -19,7 +15,7 @@ int gerarProcessos(Desc *desc){
 	uid = 1000;
 	int CPU_Burst;
 	int i;	
-	for(i = 0; i<10;i++){
+	for(i = 0; i<3;i++){
 		CPU_Burst = (rand() % 30) + 1;
 		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0));
 		ppid = pid;
@@ -56,7 +52,7 @@ void ExibirProcesso(Processo proc,int x, int y){
 void Simulacao(){
 	char opcao;
 	int ultimoPid;
-	int quantum=1,quantumEsp=0;
+	int quantum=1;
 	int sorteioEsp;
 	Processo CPU;
 	FormPrincipal();
@@ -71,11 +67,25 @@ void Simulacao(){
 	printf("Tempo da simulacao em segundos: ");
 	scanf("%d",&tempo);
 	CPU = dequeue(&descritor);
-    while(!QisEmpty(descritor.qtde) || tempo>0){
+    while(CPU.pid=0 || tempo>0){
 	    if(kbhit()){
 			opcao = Menu2();
 			if(opcao==1)
 				incluirNovoProcesso(&descritor,ultimoPid);
+			else if(opcao==2){
+				if(!QisEmpty(descritor.qtde)){
+					enqueue(&descritor,CPU);
+					CPU = dequeue(&descritor);
+					quantum=1;	
+				}
+			}
+			else if(opcao==3){
+				enqueue(&descEspera,CPU);
+				if(!QisEmpty(descritor.qtde))
+						CPU = dequeue(&descritor);	
+			}
+			else if(opcao==4)
+				enqueue(&descritor,dequeue(&descEspera));
 		}else{
 			clrscr();
 			FormPrincipal();
@@ -84,27 +94,38 @@ void Simulacao(){
     		gotoxy(3,21);
     		printf("[ENTER] Opcoes");
 			gotoxy(30, 7);
-			printf("Tempo Total: %d segundos",tempo);
+			if(tempo>=0)
+				printf("Tempo Total: %d segundos",tempo);
+			else 
+				printf("Tempo Total: 0 segundos");
 			if(CPU.tempo_exec<CPU.CPU_Burst){
 				gotoxy(30,9);
 				printf("Processo em Execucao na CPU");
 				ExibirProcesso(CPU,30,10);
 				sorteioEsp=(rand() % 10) + 1;
 				if(sorteioEsp==5){
+					gotoxy(70,9);
+					printf("Processo foi bloqueado");
 					enqueue(&descEspera,CPU);
-					CPU = dequeue(&descritor);
+					if(!QisEmpty(descritor.qtde))
+						CPU = dequeue(&descritor);
 				}
 				quantum++;
-				if(quantum==10){
+				if(quantum==10 && !QisEmpty(descritor.qtde)){
+					gotoxy(70,9);
+					printf("Acabou o quantum");
 					enqueue(&descritor,CPU);
 					CPU = dequeue(&descritor);
 					quantum=1;
 				}	
 			} else if(!QisEmpty(descritor.qtde)){
+				gotoxy(70,9);
+				printf("Processo finalizado");
 				CPU = dequeue(&descritor);
 				quantum=1;
 			}
 			else{
+				CPU.pid=0;
 				gotoxy(30,9);
 				printf("Nenhum processo na CPU");	
 			}
@@ -120,11 +141,12 @@ void Simulacao(){
 				gotoxy(30, 23);
 				printf("Primeiro da Fila de Espera");
 				ExibirProcesso(descEspera.inicio->Processo,30,24);
-				quantumEsp++;
-				if(quantumEsp==4){
-					quantumEsp=0;
+				sorteioEsp=(rand() % 10) + 1;
+				if(sorteioEsp==5){
 					enqueue(&descritor,dequeue(&descEspera));
-				}	
+					gotoxy(70, 23);
+					printf("Saiu da Espera");
+				}
 			} else {
 				gotoxy(30,23);
 				printf("Nenhum processo na Fila de Espera");	
