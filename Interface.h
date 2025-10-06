@@ -65,7 +65,7 @@ int Menu2(){
 	gotoxy(30, 7);
 	printf("Deseja:");
     gotoxy(30,8);
-    printf("1 - Incluir novo processo");
+    printf("1 - Incluir novo processo na Fila de Prontos");
     gotoxy(30,10);
     printf("2 - Executar Processo na Fila de Prontos");
     gotoxy(30,12);
@@ -73,7 +73,11 @@ int Menu2(){
     gotoxy(30,14);
     printf("4 - Retirar da Fila de Espera");
     gotoxy(30,16);
-    printf("5 - Voltar");
+    printf("5 - Exibir Fila de Prontos");
+    gotoxy(30,18);
+    printf("6 - Exibir Fila de Espera");
+    gotoxy(30,20);
+    printf("7 - Voltar");
     scanf("%d",&op);
     return op;
 }
