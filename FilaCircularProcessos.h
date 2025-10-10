@@ -2,10 +2,12 @@
 struct processo{
 	int pid,ppid,uid,gid;
 	int CPU_Burst,tempo_exec;
+	int prioridade;
+	int filhos;
 };typedef struct processo Processo;
 
 struct tpfilac{
-	struct processo Processo;
+	struct processo *PCB;
 	struct tpfilac *prox;
 };typedef struct tpfilac TpFilaC;
 
@@ -16,7 +18,8 @@ struct desc{
 
 
 void init(Desc *desc);
-Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec);
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, int filhos);
+void NovaCaixa(Processo proc, Processo **Nova);
 void enqueue(Desc *desc, Processo proc);
 Processo dequeue(Desc *desc);
 char QisEmpty(int qtde);
@@ -28,7 +31,7 @@ void init(Desc *desc){
 	desc->qtde=0;
 }
 
-Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec){
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, int filhos){
 	Processo processo;
 	processo.pid=pid;
 	processo.ppid=ppid;
@@ -36,26 +39,49 @@ Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int te
 	processo.gid=gid;
 	processo.CPU_Burst=CPU_Burst;
 	processo.tempo_exec=tempo_exec;
+	processo.prioridade=prioridade;
+	processo.filhos=filhos;
 	return processo;	
+}
+
+void NovaCaixa(Processo proc, Processo **Nova){
+	*Nova = (Processo*)malloc(sizeof(Processo));
+	(*Nova)->pid=proc.pid;
+	(*Nova)->ppid=proc.ppid;
+	(*Nova)->uid=proc.uid;
+	(*Nova)->gid=proc.gid;
+	(*Nova)->CPU_Burst=proc.CPU_Burst;
+	(*Nova)->tempo_exec=proc.tempo_exec;
+	(*Nova)->prioridade=proc.prioridade;
+	(*Nova)->filhos=proc.filhos;
 }
 
 void enqueue(Desc *desc, Processo proc){
     TpFilaC *Nova = (TpFilaC*)malloc(sizeof(TpFilaC));
-    Nova->Processo = proc;
+    TpFilaC *aux=desc->inicio;
+    NovaCaixa(proc, &(Nova->PCB));
     Nova->prox = NULL;
-
     if(desc->inicio == NULL){      
         desc->inicio = desc->fim = Nova;
-    } else {                       
-        desc->fim->prox = Nova;
+    } else if(Nova->PCB->prioridade==1){                       
+		Nova->prox=desc->inicio;
+        desc->inicio = Nova;
+    } else if(Nova->PCB->prioridade==5){
+    	desc->fim->prox = Nova;
         desc->fim = Nova;
-    }
-
+	} else {
+		while(aux->prox!=NULL && aux->prox->PCB->prioridade<=Nova->PCB->prioridade)
+			aux=aux->prox;
+		Nova->prox=aux->prox;
+		aux->prox=Nova;
+		if(Nova->prox==NULL)
+			desc->fim=Nova;	
+	}
     desc->qtde++;   
 }
 
-Processo dequeue(Desc *desc){
-	Processo proc=desc->inicio->Processo;
+Processo *dequeue(Desc *desc){
+	Processo *proc=desc->inicio->PCB;
 	TpFilaC *aux=desc->inicio;
 	desc->inicio=aux->prox;
 	free(aux);
