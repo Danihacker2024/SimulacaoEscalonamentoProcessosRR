@@ -4,32 +4,30 @@
 #include <conio.h>
 #include <time.h>
 #include <conio2.h>
-#include "Interface.h"
+//#include "Interface.h"
 #include "FilaCircularProcessos.h"
+#include "tadInterface.h"
 
-int gerarProcessos(Desc *desc){
+void gerarProcessos(Desc *desc){
 	int pid;
-	pid = rand();
 	int ppid = 1;
 	int uid;
 	uid = 1000;
 	int CPU_Burst;
-	int i;
+	int i, prioridade;
 	for(i = 0; i<2;i++){
+		pid = rand();
+		ppid = rand();
 		CPU_Burst = (rand() % 30) + 1;
-		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0));
-		ppid = pid;
-		pid++;	
+		prioridade = (rand() % 5) + 1;
+		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0));
 	}
-	return pid;
 }
 
-void incluirNovoProcesso(Desc *desc, int ppid){
-	int pid = ppid+1;
-	int uid = 1000;
-	int CPU_Burst;
-	CPU_Burst = (rand() % 30) + 1;
-	enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0));
+void incluirNovoProcesso(Desc *desc){
+	int CPU_Burst = (rand() % 30) + 1;
+	int prioridade = (rand() % 5) + 1;
+	enqueue(&*desc, criarProcesso(rand(),rand(),1000,1000,CPU_Burst,0,prioridade,0));
 }
 
 void ExibirProcesso(Processo proc,int x, int y){
@@ -54,68 +52,29 @@ void Simulacao(){
 	int ultimoPid;
 	int quantum=1;
 	int sorteioEsp;
-	Processo CPU;
-	FormPrincipal();
-	textcolor(15);
-    textbackground(0);
-	int tempo,y;
-	Desc descritor,descEspera;
-	init(&descritor);init(&descEspera);
-	ultimoPid = gerarProcessos(&descritor);
+	Processo *CPU;
+	clrscr();
+	InterfaceMain();
+	int tempo=0,y;
+	Desc descProntos,descHD, descMouse, descTeclado;
+	init(&descProntos);init(&descHD);init(&descMouse);init(descTeclado);
+	gerarProcessos(&descProntos);
 	//Exibir(descritor);
-	gotoxy(30, 7);
-	printf("Tempo da simulacao em segundos: ");
-	scanf("%d",&tempo);
 	CPU = dequeue(&descritor);
-    while(CPU.pid!=0 || tempo>0 || !QisEmpty(descEspera.qtde)){
-	    if(kbhit()){
-			opcao = Menu2();
-			if(opcao==1)
-				incluirNovoProcesso(&descritor,ultimoPid);
-			else if(opcao==2){
-				if(!QisEmpty(descritor.qtde)){
-					enqueue(&descritor,CPU);
-					CPU = dequeue(&descritor);
-					quantum=1;	
-				}
-			}
-			else if(opcao==3){
-				enqueue(&descEspera,CPU);
-				if(!QisEmpty(descritor.qtde))
-						CPU = dequeue(&descritor);	
-			}
-			else if(opcao==4)
-				enqueue(&descritor,dequeue(&descEspera));
-		}else{
+    while(CPU != NULL || !QisEmpty(descProntos)){
+	    if(kbhit())
+			incluirNovoProcesso(&descritor,ultimoPid);
+		else{
 			clrscr();
-			FormPrincipal();
-			textcolor(15);
-    		textbackground(0);
-    		gotoxy(3,21);
-    		printf("[ENTER] Opcoes");
+			InterfaceMain();
 			gotoxy(30, 7);
-			if(tempo>=0)
-				printf("Tempo Total: %d segundos",tempo);
-			else 
-				printf("Tempo Total: 0 segundos");
+			printf("Tempo: %d segundos",tempo);
 			if(CPU.tempo_exec<CPU.CPU_Burst){
-				gotoxy(30,9);
-				printf("Processo em Execucao na CPU");
 				ExibirProcesso(CPU,30,10);
 				sorteioEsp=(rand() % 10) + 1;
-				if(sorteioEsp==5){
-					gotoxy(70,9);
-					printf("Processo foi bloqueado");
-					enqueue(&descEspera,CPU);
-					if(!QisEmpty(descritor.qtde))
-						CPU = dequeue(&descritor);
-					quantum=1;
-				}
 				if(quantum!=10)
 					quantum++;
-				if(quantum==10 && !QisEmpty(descritor.qtde)){
-					gotoxy(70,9);
-					printf("Acabou o quantum");
+				if(quantum==10 && !QisEmpty(descProntos.qtde)){
 					enqueue(&descritor,CPU);
 					CPU = dequeue(&descritor);
 					quantum=1;
@@ -156,16 +115,21 @@ void Simulacao(){
 			}
 			CPU.tempo_exec++;
 			Sleep(1000);
-	    	tempo--;
+	    	tempo++;
 		}
 	}
 }
 
-
+*/
 
 
 int main(void){
 	srand(time(NULL));
+	InterfaceInit();
+	getch();
+	Simulacao();
+	
+	/*
 	exibirParticipantes();
 	char opcao;
 	do{
@@ -182,6 +146,6 @@ int main(void){
 				break;
 		}	
 	}while(opcao!=27);
-
+	*/
 }
 

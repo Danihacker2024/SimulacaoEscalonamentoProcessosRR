@@ -21,7 +21,7 @@ void init(Desc *desc);
 Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, int filhos);
 void NovaCaixa(Processo proc, Processo **Nova);
 void enqueue(Desc *desc, Processo proc);
-Processo dequeue(Desc *desc);
+Processo *dequeue(Desc *desc);
 char QisEmpty(int qtde);
 void Exibir(Desc desc);
 
@@ -80,6 +80,7 @@ void enqueue(Desc *desc, Processo proc){
     desc->qtde++;   
 }
 
+//tem q mudar a logica do dequeue e enqueue -> problema com ponteiro e struct
 Processo *dequeue(Desc *desc){
 	Processo *proc=desc->inicio->PCB;
 	TpFilaC *aux=desc->inicio;
