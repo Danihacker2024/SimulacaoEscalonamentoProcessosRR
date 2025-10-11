@@ -34,7 +34,7 @@ void InterfaceInit(){
 	printf("Daniel Martins de Almeida Neves");
 	gotoxy(ci + 40, li + 16);
 	textcolor(12);
-	printf("Gabriel Lucas Moreria Mariano");
+	printf("Gabriel Lucas Moreira Mariano");
 	gotoxy(ci + 40, li + 18);
 	textcolor(13);
 	printf("Mariana Fernandes Rezende");
