@@ -14,7 +14,7 @@ struct processo{
 	int pid,ppid,uid,gid;
 	int CPU_Burst,tempo_exec;
 	int prioridade;
-	int filhos;
+	char FlagFork;
 	flag Recursos;
 };typedef struct processo Processo;
 
@@ -30,7 +30,7 @@ struct desc{
 
 
 void init(Desc *desc);
-Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, int filhos, flag Recursos);
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, char FlagFork, flag Recursos);
 void NovaCaixa(Processo proc, Processo **Nova);
 void enqueue(Desc *desc, Processo proc);
 Processo dequeue(Desc *desc);
@@ -43,7 +43,7 @@ void init(Desc *desc){
 	desc->qtde=0;
 }
 
-Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, int filhos, flag Recursos){
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, char FlagFork, flag Recursos){
 	Processo processo;
 	processo.pid=pid;
 	processo.ppid=ppid;
@@ -52,7 +52,7 @@ Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int te
 	processo.CPU_Burst=CPU_Burst;
 	processo.tempo_exec=tempo_exec;
 	processo.prioridade=prioridade;
-	processo.filhos=filhos;
+	processo.FlagFork=FlagFork;
 	processo.Recursos=Recursos;
 	return processo;	
 }
@@ -99,6 +99,23 @@ Processo dequeue(Desc *desc){
 	TpFilaC *aux=desc->inicio;
 	desc->inicio=aux->prox;
 	free(aux);
+	desc->qtde--;
+	return proc;
+}
+
+Processo dequeueProc(Desc *desc, TpFilaC **ProcNaFila){
+	Processo proc=(*ProcNaFila)->PCB;
+	TpFilaC *aux=desc->inicio;
+	if(*ProcNaFila==desc->inicio)
+		desc->inicio=(*ProcNaFila)->prox;	
+	else{
+		while(aux!=NULL && aux->prox!=*ProcNaFila)
+			aux=aux->prox;
+		aux->prox=(*ProcNaFila)->prox;
+		if(aux->prox==NULL)
+			desc->fim=aux;
+	}
+	free(*ProcNaFila);
 	desc->qtde--;
 	return proc;
 }
