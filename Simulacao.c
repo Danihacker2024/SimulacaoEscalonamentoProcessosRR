@@ -229,25 +229,29 @@ void Simulacao(){
 			}else{
 				gotoxy(190,4);
 				printf("FINALIZADO");
-				if(CPU->PCB.filhos>0)
-					enqueue(&descWait, CPU->PCB);	
-				if(CPU->PCB.FlagFork){
-					aux=descWait.inicio;
-					while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
-						aux=aux->prox;
-					if(aux!=NULL){
-						aux->PCB.filhos--;
-						if(aux->PCB.filhos==0)
-							dequeueProc(&descWait,&aux);
-					} else{
-						aux=descProntos.inicio;
+				if(CPU!=NULL){
+					if(CPU->PCB.filhos>0)
+						enqueue(&descWait, CPU->PCB);	
+					if(CPU->PCB.FlagFork){
+						aux=descWait.inicio;
 						while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
 							aux=aux->prox;
-						if(aux!=NULL)
+						if(aux!=NULL){
 							aux->PCB.filhos--;
+							if(aux->PCB.filhos==0)
+								dequeueProc(&descWait,&aux);
+						} else{
+							aux=descProntos.inicio;
+							while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
+								aux=aux->prox;
+							if(aux!=NULL)
+								aux->PCB.filhos--;
+						}
 					}
 				}
 				if(!QisEmpty(descProntos.qtde)){
+					if (CPU == NULL)
+						CPU = (TpFilaC*)malloc(sizeof(TpFilaC));
 					CPU->PCB = dequeue(&descProntos);
 					quantum=1;
 				}else{
@@ -349,8 +353,9 @@ void Simulacao(){
 				if(sorteioInclusao==1)
 					incluirNovoProcesso(&descProntos);
 			}
-			CPU->PCB.tempo_exec++;
-			Sleep(1000);
+			if(CPU!=NULL)
+				CPU->PCB.tempo_exec++;
+			Sleep(100);
 	    	tempo++;
 		}
 	}
@@ -364,7 +369,7 @@ int main(void){
 	InterfaceInit();
 	getch();
 	Simulacao();
-	
+	return 0;
 	/*
 	exibirParticipantes();
 	char opcao;
