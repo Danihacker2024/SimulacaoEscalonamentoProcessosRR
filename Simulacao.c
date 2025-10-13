@@ -23,7 +23,7 @@ void gerarProcessos(Desc *desc){
 		ppid = rand();
 		CPU_Burst = (rand() % 30) + 1;
 		prioridade = (rand() % 5) + 1;
-		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0,recursos));
+		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0, 0,recursos, 0, 0));
 	}
 }
 
@@ -32,7 +32,7 @@ void incluirNovoProcesso(Desc *desc){
 	initFlag0(&recursos);
 	int CPU_Burst = (rand() % 30) + 1;
 	int prioridade = (rand() % 5) + 1;
-	enqueue(&*desc, criarProcesso(rand(),rand(),1000,1000,CPU_Burst,0,prioridade,0,recursos));
+	enqueue(&*desc, criarProcesso(rand(),rand(),1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
 }
 
 void ExibirProcesso(Processo proc,int x, int y){
@@ -46,7 +46,7 @@ void ExibirProcesso(Processo proc,int x, int y){
 	printf("Prioridade: %d",proc.prioridade);
 	y++;
 	gotoxy(x,y);
-	printf("Gid/Uid: %d",proc.uid);
+	printf("Filhos: %d",proc.filhos);
 	y++;
 	gotoxy(x,y);
 	printf("Tempo: (%d/%d)",proc.tempo_exec,proc.CPU_Burst);
@@ -64,9 +64,10 @@ void ExibirProcessoSemTempoRecursos(Processo proc,int x, int y){
 }
 
 
-void Fork(Processo proc, Desc *descritor){
+void Fork(Processo proc, Desc *descritor, int filhos){
 	proc.ppid=proc.pid;
-	proc.pid++;
+	proc.pid+=filhos;
+	proc.filhos=0;
 	proc.FlagFork=1;
 	enqueue(&*descritor,proc);
 }
@@ -108,6 +109,7 @@ void Simulacao(){
 			gotoxy(130, 49);
 			printf("TEMPO TOTAL: %d SEGUNDOS",tempo);
 			if(CPU!=NULL && CPU->PCB.tempo_exec<CPU->PCB.CPU_Burst){
+				
 				ExibirProcesso(CPU->PCB,190,4);
 				if(CPU->PCB.tempo_exec==1){
 					sorteioNecRec = rand() % 3;
@@ -115,15 +117,8 @@ void Simulacao(){
 						sorteioRec=(rand() % 3) + 1;
 					else
 						sorteioRec=-1;
-					//sorteio do fork 
-					sorteioFork = rand() % 2;
-					if(sorteioFork==1){
-						Fork(CPU->PCB, &descProntos);
-						enqueue(&descWait, CPU->PCB);
-						CPU->PCB=dequeue(&descProntos);
-						quantum=0;
-					}
 				}
+				
 				if(sorteioRec==1){
 					if(flag.HD){
 						CPU->PCB.Recursos.HD=1;
@@ -138,6 +133,7 @@ void Simulacao(){
 							quantum=0;
 						}
 					}
+					
 				}else if(sorteioRec==2){
 					if(flag.teclado){
 						CPU->PCB.Recursos.teclado=1;
@@ -152,6 +148,7 @@ void Simulacao(){
 							quantum=0;
 						}
 					}
+					
 				}else if(sorteioRec==3){
 					if(flag.mouse){
 							CPU->PCB.Recursos.mouse=1;
@@ -165,8 +162,17 @@ void Simulacao(){
 								CPU->PCB = dequeue(&descProntos);
 								quantum=0;
 							}
-						}
+					}	
 				}
+				if(flagExec){
+					sorteioFork = rand() % 3;
+					if(sorteioFork==1){
+						CPU->PCB.filhos++;
+						Fork(CPU->PCB, &descProntos, CPU->PCB.filhos);
+						quantum=0;
+					}
+				}
+				
 				if(quantum<10)
 					quantum++;
 				printf("quantum: %d", quantum);
@@ -196,12 +202,23 @@ void Simulacao(){
 					while(!QisEmpty(descMouse.qtde))
 						enqueue(&descProntos,dequeue(&descMouse));
 				}
+				if(CPU->PCB.filhos>0)
+					enqueue(&descWait, CPU->PCB);	
 				if(CPU->PCB.FlagFork){
 					aux=descWait.inicio;
 					while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
 						aux=aux->prox;
-					if(aux!=NULL)
-						enqueue(&descProntos,dequeueProc(&descWait,&aux));
+					if(aux!=NULL){
+						aux->PCB.filhos--;
+						if(aux->PCB.filhos==0)
+							dequeueProc(&descWait,&aux);
+					} else{
+						aux=descProntos.inicio;
+						while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
+							aux=aux->prox;
+						if(aux!=NULL)
+							aux->PCB.filhos--;
+					}
 				}
 				if(!QisEmpty(descProntos.qtde)){
 					CPU->PCB = dequeue(&descProntos);
@@ -274,7 +291,7 @@ void Simulacao(){
 				ExibirProcessoSemTempoRecursos(Mouse,190,31);
 			//sorteio de inclusao de novos processos
 			if(flagExec){
-				sorteioInclusao=rand() % 3;
+				sorteioInclusao=rand() % 10;
 				if(sorteioInclusao==1)
 					incluirNovoProcesso(&descProntos);
 			}

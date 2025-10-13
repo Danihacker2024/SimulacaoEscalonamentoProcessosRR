@@ -15,7 +15,9 @@ struct processo{
 	int CPU_Burst,tempo_exec;
 	int prioridade;
 	char FlagFork;
+	int filhos;
 	flag Recursos;
+	int timeblock,total;
 };typedef struct processo Processo;
 
 struct tpfilac{
@@ -30,7 +32,7 @@ struct desc{
 
 
 void init(Desc *desc);
-Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, char FlagFork, flag Recursos);
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade,char FlagFork, int filhos, flag Recursos, int timeblock, int total);
 void NovaCaixa(Processo proc, Processo **Nova);
 void enqueue(Desc *desc, Processo proc);
 Processo dequeue(Desc *desc);
@@ -43,7 +45,7 @@ void init(Desc *desc){
 	desc->qtde=0;
 }
 
-Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, char FlagFork, flag Recursos){
+Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int tempo_exec, int prioridade, char FlagFork, int filhos, flag Recursos, int timeblock, int total){
 	Processo processo;
 	processo.pid=pid;
 	processo.ppid=ppid;
@@ -53,7 +55,10 @@ Processo criarProcesso(int pid,int ppid, int uid, int gid, int CPU_Burst, int te
 	processo.tempo_exec=tempo_exec;
 	processo.prioridade=prioridade;
 	processo.FlagFork=FlagFork;
+	processo.filhos=filhos;
 	processo.Recursos=Recursos;
+	processo.timeblock=timeblock;
+	processo.total=total;
 	return processo;	
 }
 /*
