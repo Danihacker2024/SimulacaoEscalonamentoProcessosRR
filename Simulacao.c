@@ -18,21 +18,25 @@ void gerarProcessos(Desc *desc){
 	uid = 1000;
 	int CPU_Burst;
 	int i, prioridade;
-	for(i = 0; i<2;i++){
-		pid = rand();
-		ppid = rand();
+	for(i = 0; i<4;i++){
+		pid = (rand() % 9999)+1;
+		ppid = rand() % pid;
 		CPU_Burst = (rand() % 30) + 1;
 		prioridade = (rand() % 5) + 1;
-		enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0, 0,recursos, 0, 0));
+		if(CPU_Burst<=30)
+			enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0, 0,recursos, 0, 0));
 	}
 }
 
 void incluirNovoProcesso(Desc *desc){
+	int pid = (rand() % 9999)+1;
+	int	ppid = rand() % pid;
 	flag recursos;
 	initFlag0(&recursos);
 	int CPU_Burst = (rand() % 30) + 1;
 	int prioridade = (rand() % 5) + 1;
-	enqueue(&*desc, criarProcesso(rand(),rand(),1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
+	if(CPU_Burst<=30)
+		enqueue(&*desc, criarProcesso(pid,ppid,1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
 }
 
 void ExibirProcesso(Processo proc,int x, int y){
@@ -66,9 +70,11 @@ void ExibirProcessoBloqueado(Processo proc,int x, int y){
 	y++;
 	gotoxy(x,y);
 	printf("Filhos: %d",proc.filhos);
-	y++;
-	gotoxy(x,y);
-	printf("Tempo: (%d/%d)",proc.timeblock,proc.total);
+	if(proc.total>0){	
+		y++;
+		gotoxy(x,y);
+		printf("Tempo: (%d/%d)",proc.timeblock,proc.total);
+	}
 	
 }
 
@@ -93,6 +99,7 @@ PCB *InserePCB(Processo processo){
 }
 
 void CriarProcesso(Desc *desc, Relatorio *relatorio){
+	int ppid;
 	flag recursos;
 	initFlag0(&recursos);
 	PCB *aux;
@@ -127,7 +134,10 @@ void CriarProcesso(Desc *desc, Relatorio *relatorio){
 		f = 0;
 	}
 	if(f == 1){
-		enqueue(&*desc, criarProcesso(pid, rand(),1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
+		ppid=rand();
+		while(ppid>pid)
+			ppid=rand();
+		enqueue(&*desc, criarProcesso(pid, ppid,1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
 		if(relatorio -> pcb == NULL){
 			relatorio -> pcb = InserePCB(desc -> fim -> PCB);
 		}
@@ -151,6 +161,7 @@ void initRelatorio(Relatorio *relatorio){
 void Simulacao(){
 	flag flag;
 	initFlag1(&flag);
+	int i;
 	char opcao;
 	int ultimoPid;
 	int quantum=0;
@@ -212,6 +223,8 @@ void Simulacao(){
 						flag.HD=0;
 						HD.timeblock=0;
 						HD.total = (rand()%30) + 1;
+						while(HD.total<=0 && HD.total>30)
+							HD.total = (rand()%30) + 1;
 						if(!QisEmpty(descProntos.qtde)){
 							CPU->PCB = dequeue(&descProntos);
 							quantum=0;
@@ -240,6 +253,8 @@ void Simulacao(){
 						flag.teclado=0;
 						Teclado.timeblock=0;
 						Teclado.total = (rand()%30) + 1;
+						while(Teclado.total<=0 && Teclado.total>30)
+							Teclado.total = (rand()%30) + 1;
 						if(!QisEmpty(descProntos.qtde)){
 							CPU->PCB = dequeue(&descProntos);
 							quantum=0;
@@ -269,6 +284,8 @@ void Simulacao(){
 						Mouse.timeblock=0;
 						flag.mouse=0;
 						Mouse.total = (rand()%30) + 1;
+						while(Mouse.total<=0 && Mouse.total>30)
+							Mouse.total = (rand()%30) + 1;
 						if(!QisEmpty(descProntos.qtde)){
 							CPU->PCB = dequeue(&descProntos);
 							quantum=0;
@@ -300,7 +317,7 @@ void Simulacao(){
 				
 				if(quantum<10)
 					quantum++;
-				printf("quantum: %d", quantum);
+				//printf("quantum: %d", quantum);
 				if(quantum==10 && !QisEmpty(descProntos.qtde)){
 					enqueue(&descProntos,CPU->PCB);
 					CPU->PCB = dequeue(&descProntos);
@@ -317,7 +334,8 @@ void Simulacao(){
 						while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
 							aux=aux->prox;
 						if(aux!=NULL){
-							aux->PCB.filhos--;
+							if(aux->PCB.filhos>0)
+								aux->PCB.filhos--;
 							if(aux->PCB.filhos==0)
 								dequeueProc(&descWait,&aux);
 						} else{
@@ -341,12 +359,14 @@ void Simulacao(){
 				}
 			}
 			if(!QisEmpty(descProntos.qtde)){
+				i=0;
 				x=6;
 				aux = descProntos.inicio;
-				while(aux!=NULL){
+				while(aux!=NULL && i<12){
 					ExibirProcesso(aux->PCB,x,4);
 					x+=15;
 					aux=aux->prox;
+					i++;
 				}
 			}
 			if (!QisEmpty(descHD.qtde)) {
