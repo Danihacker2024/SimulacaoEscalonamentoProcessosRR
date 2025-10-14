@@ -37,6 +37,7 @@ void incluirNovoProcesso(Desc *desc){
 
 void ExibirProcesso(Processo proc,int x, int y){
 	gotoxy(x,y);
+	textcolor(15);
 	printf("Pid: %d",proc.pid);
 	y++;
 	gotoxy(x,y);
@@ -54,6 +55,7 @@ void ExibirProcesso(Processo proc,int x, int y){
 
 void ExibirProcessoBloqueado(Processo proc,int x, int y){
 	gotoxy(x,y);
+	textcolor(15);
 	printf("Pid: %d",proc.pid);
 	y++;
 	gotoxy(x,y);
@@ -67,6 +69,7 @@ void ExibirProcessoBloqueado(Processo proc,int x, int y){
 	y++;
 	gotoxy(x,y);
 	printf("Tempo: (%d/%d)",proc.timeblock,proc.total);
+	
 }
 
 
@@ -76,6 +79,73 @@ void Fork(Processo proc, Desc *descritor, int filhos){
 	proc.filhos=0;
 	proc.FlagFork=1;
 	enqueue(&*descritor,proc);
+}
+
+PCB *InserePCB(Processo processo){
+	PCB *ptr;
+	ptr = (PCB*)malloc(sizeof(PCB));
+	ptr -> processo = processo;
+	ptr -> tempoEX = 0;
+	ptr -> tempoWait = 0;
+	ptr -> contChildren = 0;
+	ptr -> prox = NULL;
+	return ptr;
+}
+
+void CriarProcesso(Desc *desc, Relatorio *relatorio){
+	flag recursos;
+	initFlag0(&recursos);
+	PCB *aux;
+	aux = relatorio -> pcb;
+	int CPU_Burst, prioridade, pid, f = 1;
+	clrscr();
+	InterfaceInclude();
+	gotoxy(43, 12);
+	textcolor(9);
+	printf("DIGITE O PID DO PROCESSO:");
+	gotoxy(43, 13);
+	textcolor(15);
+	scanf("%d", &pid);
+	if(pid <= 0)
+		f = 0;
+	gotoxy(43, 16);
+	textcolor(9);
+	printf("DIGITE A PRIORIDADE DO PROCESSO (ate 6):");
+	gotoxy(43, 17);
+	textcolor(15);
+	scanf("%d", &prioridade);
+	if(prioridade < 1 || prioridade > 6){
+		f = 0;
+	}
+	gotoxy(43, 20);
+	textcolor(9);
+	printf("DIGITE O TEMPO DE EXECUCAO DO PROCESSO (ate 30):");
+	gotoxy(43, 21);
+	textcolor(15);
+	scanf("%d", &CPU_Burst);
+	if(CPU_Burst < 1 || CPU_Burst > 30){
+		f = 0;
+	}
+	if(f == 1){
+		enqueue(&*desc, criarProcesso(pid, rand(),1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
+		if(relatorio -> pcb == NULL){
+			relatorio -> pcb = InserePCB(desc -> fim -> PCB);
+		}
+		else{
+			while(aux -> prox != NULL){
+				aux = aux -> prox;
+			}
+			aux -> prox = InserePCB(desc -> fim -> PCB);
+		}
+	}
+}
+
+void initRelatorio(Relatorio *relatorio){
+	relatorio -> qtdeTerminated = 0; 
+	relatorio -> qtdeBlock = 0;
+	relatorio -> tempoMedio = 0.0;
+	relatorio -> contexto = NULL;
+	relatorio -> pcb = NULL;
 }
 
 void Simulacao(){
@@ -90,12 +160,14 @@ void Simulacao(){
 	Processo HD, Teclado, Mouse;
 	TpFilaC *aux;
 	TpFilaC *CPU = (TpFilaC*)malloc(sizeof(TpFilaC));
+	Relatorio relatorio;
 	CPU->prox=NULL;
 	clrscr();
 	InterfaceMain();
 	int tempo=0,y,x;
 	Desc descProntos,descHD, descMouse, descTeclado, descWait;
 	init(&descProntos);init(&descHD);init(&descMouse);init(&descTeclado);init(&descWait);
+	initRelatorio(&relatorio);
 	gerarProcessos(&descProntos);
 	//Exibir(descritor);
 	CPU->PCB = dequeue(&descProntos);
@@ -106,12 +178,20 @@ void Simulacao(){
 	    		flagExec=0;
 			}else if(opcao==13){
 				if(flagExec)
-					incluirNovoProcesso(&descProntos);
+					CriarProcesso(&descProntos, &relatorio);
 			}
 		}
 		else{
 			clrscr();
 			InterfaceMain();
+			if(flagExec == 0){
+				gotoxy(6, 49);
+				textcolor(0);
+				printf("ESC - INTERROMPER A CRIACAO DE NOVOS PROCESSOS");
+				gotoxy(73, 49);
+				textcolor(0);
+				printf("ENTER - CRIAR UM NOVO PROCESSO");
+			}
 			gotoxy(130, 49);
 			printf("TEMPO TOTAL: %d SEGUNDOS",tempo);
 			if(CPU!=NULL && CPU->PCB.tempo_exec<CPU->PCB.CPU_Burst){
@@ -355,7 +435,7 @@ void Simulacao(){
 			}
 			if(CPU!=NULL)
 				CPU->PCB.tempo_exec++;
-			Sleep(100);
+			Sleep(1000);
 	    	tempo++;
 		}
 	}
