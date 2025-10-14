@@ -20,6 +20,24 @@ struct processo{
 	int timeblock,total;
 };typedef struct processo Processo;
 
+struct pcb{
+	Processo processo;
+	int tempoEX;
+	int tempoWait;
+	int contChildren;
+	struct pcb *prox;
+};
+typedef struct pcb PCB;
+
+struct relatorio{
+	int qtdeTerminated;
+	int qtdeBlock;
+	float tempoMedio;
+	PCB *contexto;
+	PCB *pcb;
+};
+typedef struct relatorio Relatorio;
+
 struct tpfilac{
 	struct processo PCB;
 	struct tpfilac *prox;

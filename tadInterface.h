@@ -314,3 +314,33 @@ void InterfaceMain(){
 		printf("%c",186);
 	}
 }
+
+void InterfaceInclude(){
+	int i, ci = 3, li = 1, cf = 111, lf = 30;
+	gotoxy(ci,li);
+	textcolor(15);
+	printf("%c",201);
+	gotoxy(ci,lf);
+	printf("%c",200);
+	gotoxy(cf,li);
+	printf("%c",187);
+	gotoxy(cf,lf);
+	printf("%c",188);
+	for(i=ci+1; i<cf; i++)
+	{
+		gotoxy(i,li);
+		printf("%c",205);
+		gotoxy(i,lf);
+		printf("%c",205);		
+	}
+	for(i=li+1; i<lf; i++)
+	{
+		gotoxy(ci,i);
+		printf("%c",186);
+		gotoxy(cf,i);
+		printf("%c",186);
+	}
+	gotoxy(ci + 40, li + 5);
+	textcolor(3);
+	printf("CRIACAO DE UM NOVO PROCESSO");
+}
