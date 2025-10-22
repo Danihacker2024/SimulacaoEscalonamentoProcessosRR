@@ -8,8 +8,9 @@
 #include "FilaCircularProcessos.h"
 #include "tadInterface.h"
 
+void InsereTabelaEX(TabelaP_EX **ptr, Processo proc, int tempo);
 
-void gerarProcessos(Desc *desc){
+void gerarProcessos(Desc *desc, TabelaP_EX **ptr, int tempo){
 	flag recursos;
 	initFlag0(&recursos);
 	int pid;
@@ -18,25 +19,32 @@ void gerarProcessos(Desc *desc){
 	uid = 1000;
 	int CPU_Burst;
 	int i, prioridade;
-	for(i = 0; i<4;i++){
-		pid = (rand() % 9999)+1;
+	Processo proc;
+	for(i = 0; i<2;i++){
+		pid = (rand() % 999)+1;
 		ppid = rand() % pid;
 		CPU_Burst = (rand() % 30) + 1;
 		prioridade = (rand() % 5) + 1;
-		if(CPU_Burst<=30)
-			enqueue(&*desc, criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0, 0,recursos, 0, 0));
+		if(CPU_Burst<=30){
+			proc = criarProcesso(pid,ppid,uid,uid,CPU_Burst,0,prioridade,0, 0,recursos, 0, 0);
+			enqueue(&*desc, proc);
+			InsereTabelaEX(&*ptr, proc, tempo);
+		}	
 	}
 }
 
-void incluirNovoProcesso(Desc *desc){
-	int pid = (rand() % 9999)+1;
+void incluirNovoProcesso(Desc *desc, TabelaP_EX **ptr, int tempo){
+	int pid = (rand() % 99)+1;
 	int	ppid = rand() % pid;
 	flag recursos;
 	initFlag0(&recursos);
 	int CPU_Burst = (rand() % 30) + 1;
 	int prioridade = (rand() % 5) + 1;
-	if(CPU_Burst<=30)
-		enqueue(&*desc, criarProcesso(pid,ppid,1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
+	Processo proc = criarProcesso(pid,ppid,1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0);
+	if(CPU_Burst<=30){
+		enqueue(&*desc, proc);
+		InsereTabelaEX(&*ptr, proc, tempo);
+	}	
 }
 
 void ExibirProcesso(Processo proc,int x, int y){
@@ -79,31 +87,46 @@ void ExibirProcessoBloqueado(Processo proc,int x, int y){
 }
 
 
-void Fork(Processo proc, Desc *descritor, int filhos){
+void Fork(Processo proc, Desc *descritor, int filhos, TabelaP_EX *ptr, int tempo){
 	proc.ppid=proc.pid;
 	proc.pid+=filhos;
 	proc.filhos=0;
 	proc.FlagFork=1;
 	enqueue(&*descritor,proc);
+	InsereTabelaEX(&ptr, proc, tempo);
 }
 
-PCB *InserePCB(Processo processo){
-	PCB *ptr;
-	ptr = (PCB*)malloc(sizeof(PCB));
+TabelaP *InserePCB(Processo processo){
+	TabelaP *ptr;
+	ptr = (TabelaP*)malloc(sizeof(TabelaP));
 	ptr -> processo = processo;
-	ptr -> tempoEX = 0;
-	ptr -> tempoWait = 0;
-	ptr -> contChildren = 0;
 	ptr -> prox = NULL;
 	return ptr;
 }
 
-void CriarProcesso(Desc *desc, Relatorio *relatorio){
+void InsereTabelaEX(TabelaP_EX **ptr, Processo processo, int tempo){
+	TabelaP_EX *aux, *novo;
+	novo = (TabelaP_EX*)malloc(sizeof(TabelaP_EX));
+	novo -> processo = processo;
+	novo -> tempoEX[0] = tempo;
+	novo -> tempoEX[1] = 0;
+	novo -> prox = NULL;
+	if(*ptr == NULL){
+		*ptr = novo;
+	}
+	else{
+		aux = *ptr;
+		while(aux->prox != NULL){
+			aux = aux -> prox;
+		}
+		aux->prox = novo;
+	}
+}
+
+void CriarProcesso(Desc *desc, TabelaP_EX **ptr, int tempo){
 	int ppid;
 	flag recursos;
 	initFlag0(&recursos);
-	PCB *aux;
-	aux = relatorio -> pcb;
 	int CPU_Burst, prioridade, pid, f = 1;
 	clrscr();
 	InterfaceInclude();
@@ -137,25 +160,112 @@ void CriarProcesso(Desc *desc, Relatorio *relatorio){
 		ppid=rand();
 		while(ppid>pid)
 			ppid=rand();
-		enqueue(&*desc, criarProcesso(pid, ppid,1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0));
-		if(relatorio -> pcb == NULL){
-			relatorio -> pcb = InserePCB(desc -> fim -> PCB);
-		}
-		else{
-			while(aux -> prox != NULL){
-				aux = aux -> prox;
-			}
-			aux -> prox = InserePCB(desc -> fim -> PCB);
-		}
+		Processo proc = criarProcesso(pid, ppid,1000,1000,CPU_Burst,0,prioridade,0,0,recursos, 0, 0);
+		enqueue(&*desc, proc);
+		InsereTabelaEX(&*ptr, proc, tempo);
 	}
 }
 
 void initRelatorio(Relatorio *relatorio){
 	relatorio -> qtdeTerminated = 0; 
-	relatorio -> qtdeBlock = 0;
-	relatorio -> tempoMedio = 0.0;
+	relatorio -> tempoEspera[0] = 0;
+	relatorio -> tempoEspera[1] = 0;
+	relatorio -> tempoEspera[2] = 0;
+	relatorio -> block = NULL;
 	relatorio -> contexto = NULL;
-	relatorio -> pcb = NULL;
+	relatorio -> tabelaEX = NULL;
+	relatorio -> tabelaPai = NULL;
+}
+
+
+char BuscaProcesso(TabelaP *ptr, int id){
+	while(ptr != NULL && ptr -> processo.pid != id){
+		ptr = ptr -> prox;
+	}
+	return ptr == NULL;
+}
+
+void InsereTabela(TabelaP **ptr, Processo processo){
+	TabelaP *aux, *nova;
+	nova = (TabelaP*)malloc(sizeof(TabelaP));
+	nova -> processo = processo;
+	nova -> prox = NULL;
+	if(*ptr == NULL){
+		*ptr = nova;
+	} 
+	else{
+		aux = *ptr;
+		while(aux->prox != NULL){
+			aux = aux -> prox;
+		}
+		aux->prox = nova;
+	}
+}
+
+void AlteraTabelaEX(TabelaP_EX *ptr, int id, int tempo){
+	while(ptr != NULL && ptr -> processo.pid != id){
+		ptr = ptr -> prox;
+	}
+	if(ptr!=NULL)
+		ptr -> tempoEX[1] = tempo;
+}
+
+char BuscaTabelaPai(TabelaP_Pai *ptr, int id){
+	while(ptr != NULL && ptr -> processo.pid != id){
+		ptr = ptr -> prox;
+	}
+	return ptr == NULL;
+}
+
+void InsereTabelaPai(TabelaP_Pai **ptr, Processo processo){
+	TabelaP_Pai *aux, *novo;
+	novo = (TabelaP_Pai*)malloc(sizeof(TabelaP_Pai));
+	novo -> processo = processo;
+	novo -> contChildren = 1;
+	novo -> tempoWait[0] = 0;
+	novo -> tempoWait[1] = 0;
+	novo -> prox = NULL;
+	if(*ptr == NULL){
+		*ptr = novo;
+	}
+	else{
+		aux = *ptr;
+		while(aux->prox != NULL){
+			aux = aux -> prox;
+		}
+		aux->prox = novo;
+	}
+}
+
+void AlterarTabelaPai(TabelaP_Pai *ptr, int id, char op, int tempo){
+	while(ptr != NULL && ptr -> processo.pid != id){
+		ptr = ptr -> prox;
+	}
+	if(ptr != NULL){
+		if(op == 'F'){
+		ptr -> contChildren++;
+		}
+		else{
+			if(op == 'E'){
+				ptr -> tempoWait[0] = tempo;
+			}
+			else{
+				if(op == 'S'){
+					ptr -> tempoWait[1] = tempo;
+				}
+			}
+		}
+	}
+	
+}
+
+void ExibirRelatorio(Relatorio relatorio){
+	clrscr();
+	InterfaceRelatorio();
+	textcolor(15);
+	gotoxy(43, 9);
+	printf("Qtde de Processo Finalizados: %d", relatorio.qtdeTerminated);
+	getch();
 }
 
 void Simulacao(){
@@ -179,7 +289,7 @@ void Simulacao(){
 	Desc descProntos,descHD, descMouse, descTeclado, descWait;
 	init(&descProntos);init(&descHD);init(&descMouse);init(&descTeclado);init(&descWait);
 	initRelatorio(&relatorio);
-	gerarProcessos(&descProntos);
+	gerarProcessos(&descProntos, &relatorio.tabelaEX, tempo);
 	//Exibir(descritor);
 	CPU->PCB = dequeue(&descProntos);
     while((CPU != NULL) || !QisEmpty(descProntos.qtde) || !flag.HD || !flag.mouse || !flag.teclado){
@@ -189,7 +299,7 @@ void Simulacao(){
 	    		flagExec=0;
 			}else if(opcao==13){
 				if(flagExec)
-					CriarProcesso(&descProntos, &relatorio);
+					CriarProcesso(&descProntos, &relatorio.tabelaEX, tempo);
 			}
 		}
 		else{
@@ -202,11 +312,14 @@ void Simulacao(){
 				gotoxy(73, 49);
 				textcolor(0);
 				printf("ENTER - CRIAR UM NOVO PROCESSO");
+				gotoxy(130, 49);
+				textcolor(6);
+				printf("TEMPO TOTAL: %d SEGUNDOS",tempo);
 			}
 			gotoxy(130, 49);
 			printf("TEMPO TOTAL: %d SEGUNDOS",tempo);
+			textcolor(15);
 			if(CPU!=NULL && CPU->PCB.tempo_exec<CPU->PCB.CPU_Burst){
-				
 				ExibirProcesso(CPU->PCB,190,4);
 				sorteioNecRec = rand() % 10;
 				if(sorteioNecRec==1)
@@ -215,6 +328,11 @@ void Simulacao(){
 					sorteioRec=-1;
 				
 				if(sorteioRec==1){
+					relatorio.tempoEspera[0] += tempo;
+					if(BuscaProcesso(relatorio.block, CPU -> PCB.pid)){
+						relatorio.tempoEspera[2]++;
+						InsereTabela(&relatorio.block, CPU -> PCB);
+					}
 					if(flag.HD){
 						HD=CPU->PCB;
 						HD.Recursos.HD=1;
@@ -245,6 +363,11 @@ void Simulacao(){
 					}
 					
 				}else if(sorteioRec==2){
+					relatorio.tempoEspera[0] += tempo;
+					if(BuscaProcesso(relatorio.block, CPU -> PCB.pid)){
+						relatorio.tempoEspera[2]++;
+						InsereTabela(&relatorio.block, CPU -> PCB);
+					}
 					if(flag.teclado){
 						Teclado=CPU->PCB;
 						Teclado.Recursos.mouse=1;
@@ -276,6 +399,11 @@ void Simulacao(){
 					}
 					
 				}else if(sorteioRec==3){
+					relatorio.tempoEspera[0] += tempo;
+					if(BuscaProcesso(relatorio.block, CPU->PCB.pid)){
+						relatorio.tempoEspera[2]++;
+						InsereTabela(&relatorio.block, CPU->PCB);
+					}
 					if(flag.mouse){
 						Mouse=CPU->PCB;
 						Mouse.Recursos.mouse=1;
@@ -309,8 +437,14 @@ void Simulacao(){
 				if(flagExec){
 					sorteioFork = rand() % 10;
 					if(sorteioFork==1){
+						if(BuscaTabelaPai(relatorio.tabelaPai, CPU -> PCB.pid)){
+							InsereTabelaPai(&relatorio.tabelaPai, CPU -> PCB);
+						}
+						else{
+							AlterarTabelaPai(relatorio.tabelaPai, CPU -> PCB.pid, 'F', tempo);
+						}
 						CPU->PCB.filhos++;
-						Fork(CPU->PCB, &descProntos, CPU->PCB.filhos);
+						Fork(CPU->PCB, &descProntos, CPU->PCB.filhos, relatorio.tabelaEX, tempo);
 						quantum=0;
 					}
 				}
@@ -319,6 +453,9 @@ void Simulacao(){
 					quantum++;
 				//printf("quantum: %d", quantum);
 				if(quantum==10 && !QisEmpty(descProntos.qtde)){
+					if(BuscaProcesso(relatorio.contexto, CPU -> PCB.pid)){
+						InsereTabela(&relatorio.contexto, CPU -> PCB);
+					}
 					enqueue(&descProntos,CPU->PCB);
 					CPU->PCB = dequeue(&descProntos);
 					quantum=0;
@@ -327,8 +464,12 @@ void Simulacao(){
 				gotoxy(190,4);
 				printf("FINALIZADO");
 				if(CPU!=NULL){
-					if(CPU->PCB.filhos>0)
-						enqueue(&descWait, CPU->PCB);	
+					relatorio.qtdeTerminated++;
+					AlteraTabelaEX(relatorio.tabelaEX, CPU -> PCB.pid, tempo);
+					if(CPU->PCB.filhos>0){
+						AlterarTabelaPai(relatorio.tabelaPai, CPU -> PCB.pid, 'E', tempo);
+						enqueue(&descWait, CPU->PCB);
+					}
 					if(CPU->PCB.FlagFork){
 						aux=descWait.inicio;
 						while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
@@ -336,8 +477,10 @@ void Simulacao(){
 						if(aux!=NULL){
 							if(aux->PCB.filhos>0)
 								aux->PCB.filhos--;
-							if(aux->PCB.filhos==0)
+							if(aux->PCB.filhos==0){
+								AlterarTabelaPai(relatorio.tabelaPai, aux -> PCB.pid, 'S', tempo);
 								dequeueProc(&descWait,&aux);
+							}
 						} else{
 							aux=descProntos.inicio;
 							while(aux!=NULL && CPU->PCB.ppid!=aux->PCB.pid)
@@ -412,6 +555,7 @@ void Simulacao(){
 				HD.timeblock++;
 				ExibirProcessoBloqueado(HD,190,13);
 				if(HD.timeblock>=HD.total){
+					relatorio.tempoEspera[1] += tempo;
 					enqueue(&descProntos,HD);
 					if(!QisEmpty(descHD.qtde))
 						HD = dequeue(&descHD);
@@ -426,6 +570,7 @@ void Simulacao(){
 				Teclado.timeblock++;
 				ExibirProcessoBloqueado(Teclado,190,22);
 				if(Teclado.timeblock>=Teclado.total){
+					relatorio.tempoEspera[1] += tempo;
 					enqueue(&descProntos,Teclado);
 					if(!QisEmpty(descTeclado.qtde))
 						Teclado = dequeue(&descTeclado);
@@ -440,7 +585,8 @@ void Simulacao(){
 				Mouse.timeblock++;
 				ExibirProcessoBloqueado(Mouse,190,31);
 				if(Mouse.timeblock>=Mouse.total){
-					enqueue(&descProntos,Teclado);
+					relatorio.tempoEspera[1] += tempo;
+					enqueue(&descProntos,Mouse);
 					if(!QisEmpty(descMouse.qtde))
 						Mouse = dequeue(&descMouse);
 					else
@@ -451,17 +597,60 @@ void Simulacao(){
 			if(flagExec){
 				sorteioInclusao=rand() % 10;
 				if(sorteioInclusao==1)
-					incluirNovoProcesso(&descProntos);
+					incluirNovoProcesso(&descProntos, &relatorio.tabelaEX, tempo);
 			}
 			if(CPU!=NULL)
 				CPU->PCB.tempo_exec++;
-			Sleep(1000);
+			Sleep(100);
 	    	tempo++;
 		}
 	}
+	system("cls");
+	textcolor(15);
+	printf("Finalizados: %d\n", relatorio.qtdeTerminated);
+	printf("Bloqueado: %d\n", relatorio.tempoEspera[2]);
+	float media; 
+	if (relatorio.tempoEspera[2] != 0){
+		media = (relatorio.tempoEspera[1] - relatorio.tempoEspera[0]) / relatorio.tempoEspera[2];
+		if(media < 0){
+			media = -media;
+		}
+	}
+	else
+    	media = 0;
+	printf("Media: %.2f\n", media);
+	TabelaP *ptr;
+	ptr = relatorio.contexto;
+	int contador = 0;
+	while(ptr != NULL){
+		contador++;
+		ptr = ptr -> prox;
+	}
+	printf("Mudanca de Contexto: %d\n", contador);
+	TabelaP_EX *ptr2 = relatorio.tabelaEX;
+	while(ptr2 != NULL){
+		printf("Processo: %d\nTempo de Execucao: %d\n", ptr2 -> processo.pid, (ptr2 -> tempoEX[1] - ptr2 -> tempoEX[0]));
+		ptr2 = ptr2 -> prox;
+	}
+	TabelaP_Pai *ptr3 = relatorio.tabelaPai;
+	int timeP;
+	while(ptr3 != NULL){
+		if(ptr3 -> tempoWait[1] == 0){
+			ptr3 -> tempoWait[1] = tempo;
+		}
+		if(ptr3 -> tempoWait[0] == 0){
+			timeP = 0;
+		}
+		else{
+			timeP = ptr3 -> tempoWait[1] - ptr3 -> tempoWait[0];
+		}
+		printf("Processo: %d\nFilhos: %d\nWait: %d\n", ptr3 -> processo.pid, ptr3 -> contChildren, timeP);
+		ptr3 = ptr3 -> prox;
+		timeP = 0;
+	}
+	getch();
+	//ExibirRelatorio(relatorio);
 }
-
-
 
 
 int main(void){
@@ -471,4 +660,3 @@ int main(void){
 	Simulacao();
 	return 0;
 }
-

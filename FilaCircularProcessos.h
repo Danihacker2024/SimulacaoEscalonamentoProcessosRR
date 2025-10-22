@@ -20,21 +20,34 @@ struct processo{
 	int timeblock,total;
 };typedef struct processo Processo;
 
-struct pcb{
+struct tabelaP_ex{
 	Processo processo;
-	int tempoEX;
-	int tempoWait;
-	int contChildren;
-	struct pcb *prox;
+	int tempoEX[3];
+	struct tabelaP_ex *prox;
 };
-typedef struct pcb PCB;
+typedef struct tabelaP_ex TabelaP_EX;
+
+struct tabelaP_pai{
+	Processo processo;
+	int contChildren;
+	int tempoWait[3];
+	struct tabelaP_pai *prox;
+};
+typedef struct tabelaP_pai TabelaP_Pai;
+
+struct tabelaP{
+	Processo processo;
+	struct tabelaP *prox;
+};
+typedef struct tabelaP TabelaP;
 
 struct relatorio{
 	int qtdeTerminated;
-	int qtdeBlock;
-	float tempoMedio;
-	PCB *contexto;
-	PCB *pcb;
+	int tempoEspera[3];
+	TabelaP *block;
+	TabelaP *contexto;
+	TabelaP_EX *tabelaEX;
+	TabelaP_Pai *tabelaPai;
 };
 typedef struct relatorio Relatorio;
 
